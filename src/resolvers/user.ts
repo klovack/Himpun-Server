@@ -1,4 +1,4 @@
-import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Resolver } from "type-graphql";
+import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Query, Resolver } from "type-graphql";
 import {SyntaxErrorException} from "@mikro-orm/core";
 
 import { HimpunContext } from "src/types";
@@ -33,6 +33,22 @@ class UserResponse {
 
 @Resolver(User)
 export class UserResolver {
+  @Query(() => User, {nullable: true})
+  async profile(
+    @Ctx() ctx: HimpunContext
+  ): Promise<User | null> {
+    if (!ctx.req.session!.userId) {
+      return null;
+    }
+
+    const user = await ctx.em.findOne(User, {
+      id: ctx.req.session!.userId,
+    });
+
+    return user;
+  }
+
+
   /**
    * Handle registration for the user
    * @param credentials is the username and password
@@ -119,8 +135,6 @@ export class UserResolver {
       };
     }
 
-    console.log(user);
-
     // Check if password matched
     const isValid = await user.verifiedPassword(credentials.password);
     if (!isValid) {
@@ -133,6 +147,9 @@ export class UserResolver {
         ]
       };
     }
+
+    // Store user ID session and keep them logged in
+    ctx.req.session!.userId = user.id;
 
     return { user };
   }
