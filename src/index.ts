@@ -6,6 +6,7 @@ import { buildSchema } from 'type-graphql';
 import { __prod__ } from "./constant";
 import microConfig from './mikro-orm.config';
 import { HelloResolver } from "./resolvers/hello";
+import { PostResolver } from "./resolvers/post";
 
 const main = async () => {
   
@@ -20,8 +21,11 @@ const main = async () => {
   const app = express();
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [HelloResolver],
-    })
+      resolvers: [HelloResolver, PostResolver],
+    }),
+
+    // The apollo graphql needs to know the enitity from the entity manager
+    context: () => ({ em: orm.em })
   });
 
   apolloServer.applyMiddleware({app});
