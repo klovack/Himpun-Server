@@ -13,6 +13,11 @@ import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 import { HimpunContext } from "./types";
 
+const config = {
+  port: 4000,
+  sessionSecret: 'AJFS923klsankanfoqhf3@Q$(UJFOSklj3rfj',
+}
+
 const main = async () => {
 
   // Connect to redis
@@ -48,7 +53,7 @@ const main = async () => {
       saveUninitialized: false,
       
       // TODO Hide the secret variable
-      secret: 'AJFS923klsankanfoqhf3@Q$(UJFOSklj3rfj',
+      secret: config.sessionSecret,
       resave: false,
     })
   )
@@ -64,8 +69,8 @@ const main = async () => {
   });
   apolloServer.applyMiddleware({app});
   
-  app.listen(3000, () => {
-    console.log('Server started on localhost:3000');
+  app.listen(config.port, () => {
+    console.log('Server started on localhost:' + config.port);
   });
 };
 
