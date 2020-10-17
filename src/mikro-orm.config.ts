@@ -3,10 +3,12 @@ import { MikroORM } from '@mikro-orm/core';
 
 import { __prod__ } from './constant';
 import { Post } from './entities/Post';
+import { User } from './entities/User';
 
 export default {
   entities: [
     Post,
+    User,
   ],
   migrations: {
     path: path.join(__dirname, './migrations'),

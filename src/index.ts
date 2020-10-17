@@ -7,6 +7,7 @@ import { __prod__ } from "./constant";
 import microConfig from './mikro-orm.config';
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
+import { UserResolver } from "./resolvers/user";
 
 const main = async () => {
   
@@ -21,7 +22,8 @@ const main = async () => {
   const app = express();
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [HelloResolver, PostResolver],
+      resolvers: [HelloResolver, PostResolver, UserResolver],
+      validate: false,
     }),
 
     // The apollo graphql needs to know the enitity from the entity manager
