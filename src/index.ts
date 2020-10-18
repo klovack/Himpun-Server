@@ -5,6 +5,7 @@ import { buildSchema } from 'type-graphql';
 import redis from 'redis';
 import session from 'express-session';
 import connectRedis from "connect-redis";
+import cors from "cors";
 
 import { __prod__ } from "./constant";
 import microConfig from './mikro-orm.config';
@@ -16,6 +17,7 @@ import { HimpunContext } from "./types";
 const config = {
   port: 4000,
   sessionSecret: 'AJFS923klsankanfoqhf3@Q$(UJFOSklj3rfj',
+  corsOrigin: "http://localhost:3000",
 }
 
 const main = async () => {
@@ -34,6 +36,11 @@ const main = async () => {
   // await orm.em.persistAndFlush(post);
 
   const app = express();
+
+  app.use(cors({
+    credentials: true,
+    origin: config.corsOrigin,
+  }));
 
   // Use Session with redis
   app.use(
@@ -67,7 +74,12 @@ const main = async () => {
     // The apollo graphql needs to know the enitity from the entity manager
     context: ({req, res}): HimpunContext => ({ em: orm.em, req, res })
   });
-  apolloServer.applyMiddleware({app});
+  apolloServer.applyMiddleware({
+    app,
+    cors: {
+      origin: "http://localhost:3000",
+    }
+  });
   
   app.listen(config.port, () => {
     console.log('Server started on localhost:' + config.port);
