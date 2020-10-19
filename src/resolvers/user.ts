@@ -1,5 +1,6 @@
 import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Query, Resolver } from "type-graphql";
-import {SyntaxErrorException} from "@mikro-orm/core";
+import { SyntaxErrorException} from "@mikro-orm/core";
+import { EntityManager } from "@mikro-orm/postgresql";
 
 import { HimpunContext } from "src/types";
 import { User } from "../entities/User";
@@ -80,17 +81,33 @@ export class UserResolver {
       }
     }
 
-    const user = ctx.em.create(User, new User({
+    let user = ctx.em.create(User, new User({
         username: credentials.username,
         firstname: options.firstname, 
         lastname: options.lastname
       })
     );
-
+    
+    // Generate necessary fields
+    user.generateId();
     await user.generateHashedPassword(credentials.password);
 
     try {
-      await ctx.em.persistAndFlush(user);
+      // Because the user object is created using KnexQuery
+      // The object that is passed on to the insert should be created manually.
+      // It's just not possible to give the `user` into the insert function
+      const result = await (ctx.em as EntityManager).createQueryBuilder(User)
+      .getKnexQuery().insert({
+          id: user.id,
+          username: user.username,
+          created_at: user.createdAt,
+          updated_at: user.updatedAt,
+          password: user.password,
+        })
+        .returning("*");
+        
+      user = result[0];
+
     } catch(err: any) {
       const exceptionErr = err as SyntaxErrorException;
       if (exceptionErr && exceptionErr.code === "23505") {
@@ -149,7 +166,7 @@ export class UserResolver {
     }
 
     // Store user ID session and keep them logged in
-    ctx.req.session!.userId = user.id;
+    ctx.req.session![user.id] = user.id;
 
     return { user };
   }

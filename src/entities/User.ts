@@ -63,6 +63,19 @@ export class User {
     this.firstname = firstname ? firstname : "";
     this.lastname = lastname ? lastname : "";
   }
+
+  /**
+   * Generate ID and assign it to the instance's id.
+   * 
+   * This function should only be created if the User's instance is not created
+   * by Mikro ORM.
+   * 
+   * When creating User's instance using Mikro ORM, ID is automatically generated
+   * using Mikro ORM Lifecycle Hooks.
+   */
+  generateId() {
+    this.id = uuidv4();
+  }
   
   /**
    * Hash the password and then store it into the instance's password
