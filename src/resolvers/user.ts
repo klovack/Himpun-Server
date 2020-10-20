@@ -2,9 +2,10 @@ import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Query, Resolver } fro
 import { SyntaxErrorException} from "@mikro-orm/core";
 import { EntityManager } from "@mikro-orm/postgresql";
 
-import { HimpunContext } from "src/types";
+import { HimpunContext } from "../types";
 import { User } from "../entities/User";
 import { FieldError } from "./errors";
+import { COOKIE_NAME } from "../constant";
 
 @InputType()
 class UsernamePasswordInput {
@@ -174,5 +175,22 @@ export class UserResolver {
     ctx.req.session!.userId = user.id;
 
     return { user };
+  }
+
+
+  @Mutation(() => Boolean)
+  logout (
+    @Ctx() ctx: HimpunContext
+  ) {
+    return new Promise((resolve) => ctx.req.session?.destroy(err => {
+      if (err) {
+        console.log(err);
+        resolve(false);
+        return;
+      }
+
+      ctx.res.clearCookie(COOKIE_NAME);
+      resolve(true);
+    }))
   }
 }

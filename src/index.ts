@@ -7,7 +7,7 @@ import session from 'express-session';
 import connectRedis from "connect-redis";
 import cors from "cors";
 
-import { __prod__ } from "./constant";
+import { COOKIE_NAME, __prod__ } from "./constant";
 import microConfig from './mikro-orm.config';
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
@@ -40,7 +40,7 @@ const main = async () => {
   // Use Session with redis
   app.use(
     session({
-      name: "qid",
+      name: COOKIE_NAME,
       store: new RedisStore({ 
         client: redisClient,
         disableTouch: true,
