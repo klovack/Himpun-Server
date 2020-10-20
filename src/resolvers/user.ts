@@ -103,6 +103,8 @@ export class UserResolver {
           created_at: user.createdAt,
           updated_at: user.updatedAt,
           password: user.password,
+          firstname: user.firstname,
+          lastname: user.lastname,
         })
         .returning("*");
         
@@ -121,6 +123,9 @@ export class UserResolver {
         }
       }
     }
+
+    // Store user ID session and keep them logged in
+    ctx.req.session!.userId = user.id;
 
     return { user };
   }
@@ -166,7 +171,7 @@ export class UserResolver {
     }
 
     // Store user ID session and keep them logged in
-    ctx.req.session![user.id] = user.id;
+    ctx.req.session!.userId = user.id;
 
     return { user };
   }
