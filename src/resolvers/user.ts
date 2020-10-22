@@ -1,28 +1,13 @@
-import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql";
 import { SyntaxErrorException} from "@mikro-orm/core";
 import { EntityManager } from "@mikro-orm/postgresql";
+import { validate } from "class-validator";
 
 import { HimpunContext } from "../types";
 import { User } from "../entities/User";
 import { FieldError } from "./errors";
 import { COOKIE_NAME } from "../constant";
-
-@InputType()
-class UsernamePasswordInput {
-  @Field()
-  username: string
-  @Field()
-  password: string
-}
-
-@InputType()
-class NameInput {
-  @Field()
-  firstname: string
-
-  @Field()
-  lastname: string
-}
+import { CredentialInput, NameInput, LoginInput } from "../input-types/user";
 
 @ObjectType()
 class UserResponse {
@@ -35,6 +20,11 @@ class UserResponse {
 
 @Resolver(User)
 export class UserResolver {
+  /**
+   * Handle getting the profile of the user
+   * 
+   * @param ctx the context of the application. It is automatically filled by apollo
+   */
   @Query(() => User, {nullable: true})
   async profile(
     @Ctx() ctx: HimpunContext
@@ -50,6 +40,14 @@ export class UserResolver {
     return user;
   }
 
+  @Mutation(() => UserResponse)
+  async forgotPassword(
+    @Arg('email') email: string,
+    @Ctx() ctx: HimpunContext,
+  ): Promise<UserResponse> {
+    console.log(ctx, email);
+    return {};
+  }
 
   /**
    * Handle registration for the user
@@ -60,35 +58,30 @@ export class UserResolver {
    */
   @Mutation(() => UserResponse)
   async register(
-    @Arg('credentials') credentials: UsernamePasswordInput,
+    @Arg('credentials') credentials: CredentialInput,
     @Arg('options', { nullable: true }) options: NameInput,
     @Ctx() ctx: HimpunContext
   ): Promise<UserResponse> {
-    if (!User.isValidUsername(credentials.username)) {
-      return {
-        errors: [{
-          field: "username",
-          message: "Username is invalid",
-        }]
-      }
+    // validate the credentials
+    const validationErrors = await validate(credentials)
+    if (validationErrors.length > 0) {
+      const errors: FieldError[] = [];
+      validationErrors.map((err) => {
+        errors.push(FieldError.fromValidationError(err));
+      });
+
+      return {errors};
     }
 
-    if (!User.isValidPassword(credentials.password)) {
-      return {
-        errors: [{
-          field: "password",
-          message: "Password is invalid",
-        }]
-      }
-    }
-
+    // Create user object to be validated and save
     let user = ctx.em.create(User, new User({
         username: credentials.username,
+        email: credentials.email,
         firstname: options.firstname, 
         lastname: options.lastname
       })
     );
-    
+
     // Generate necessary fields
     user.generateId();
     await user.generateHashedPassword(credentials.password);
@@ -139,12 +132,21 @@ export class UserResolver {
    */
   @Mutation(() => UserResponse)
   async login(
-    @Arg('credentials') credentials: UsernamePasswordInput,
+    @Arg('credentials') credentials: LoginInput,
     @Ctx() ctx: HimpunContext
   ): Promise<UserResponse> {
-    const user = await ctx.em.findOne(User, {
-      username: credentials.username
-    });
+    const validationErrors = await validate(credentials)
+    if (validationErrors.length > 0) {
+      const errors: FieldError[] = [];
+      validationErrors.map((err) => {
+        errors.push(FieldError.fromValidationError(err));
+      });
+
+      return {errors};
+    }
+    
+    const searchOpt = credentials.usernameOrEmail.includes("@") ? { email: credentials.usernameOrEmail } : { username: credentials.usernameOrEmail };
+    const user = await ctx.em.findOne(User, searchOpt);
 
     // Check if the user exists
     if (!user) {

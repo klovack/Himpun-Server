@@ -2,6 +2,7 @@ import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 import { Field, ObjectType } from "type-graphql";
 import argon2 from 'argon2';
 import { v4 as uuidv4 } from 'uuid';
+import { IsEmail, IsString, MinLength, NotContains } from "class-validator";
 
 @ObjectType()
 @Entity()
@@ -32,9 +33,21 @@ export class User {
   @Property({ type: 'date', onUpdate: () => new Date() })
   updatedAt = new Date();
 
+  @IsString()
+  @MinLength(User.USERNAME_MIN_LENGTH)
+  @NotContains("@", {
+    message: "username must not have @ symbol"
+  })
   @Field(() => String)
   @Property({type: 'text', unique: true})
   username!: string;
+
+  @Field(() => String)
+  @IsEmail(undefined, {
+    message: "email must be a valid email address"
+  })
+  @Property({type: 'text', unique: true})
+  email!: string;
 
   @Property({type: "text"})
   password!: string;
@@ -57,8 +70,9 @@ export class User {
    * @param user username, firstname, lastname
    * @param generateId optional if you want to create new user with the id
    */
-  constructor({username, firstname, lastname}: IUser) {
+  constructor({username, email, firstname, lastname}: IUser) {
     this.username = username;
+    this.email = email;
     
     this.firstname = firstname ? firstname : "";
     this.lastname = lastname ? lastname : "";
@@ -114,6 +128,7 @@ export class User {
 
 interface IUser {
   username: string;
+  email: string,
   password?: string;
   firstname?: string;
   lastname?: string;

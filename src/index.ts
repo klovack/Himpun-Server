@@ -21,7 +21,6 @@ const config = {
 }
 
 const main = async () => {
-
   // Connect to redis
   const RedisStore = connectRedis(session);
   const redisClient = redis.createClient();
