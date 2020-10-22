@@ -95,6 +95,7 @@ export class UserResolver {
           id: user.id,
           username: user.username,
           created_at: user.createdAt,
+          email: user.email,
           updated_at: user.updatedAt,
           password: user.password,
           firstname: user.firstname,
@@ -106,14 +107,25 @@ export class UserResolver {
 
     } catch(err: any) {
       const exceptionErr = err as SyntaxErrorException;
-      if (exceptionErr && exceptionErr.code === "23505") {
-        return {
-          errors: [
-            {
-              field: "username",
-              message: "username has already been taken",
-            }
-          ]
+      if (exceptionErr) {
+        if (exceptionErr.code === "23505") {
+          return {
+            errors: [
+              {
+                field: "username",
+                message: "username has already been taken",
+              }
+            ]
+          }
+        } else {
+          return {
+            errors: [
+              {
+                field: "server",
+                message: "there has been an error on the server"
+              }
+            ]
+          }
         }
       }
     }
