@@ -1,13 +1,15 @@
 import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql";
 import { SyntaxErrorException} from "@mikro-orm/core";
 import { EntityManager } from "@mikro-orm/postgresql";
-import { validate } from "class-validator";
+import { isEmail, validate } from "class-validator";
 
 import { HimpunContext } from "../types";
 import { User } from "../entities/User";
 import { FieldError } from "./errors";
 import { COOKIE_NAME } from "../constant";
 import { CredentialInput, NameInput, LoginInput } from "../input-types/user";
+import { sendEmail } from "../utils/sendEmail";
+import { resetPasswordEmail } from "../utils/email-templates/reset-password";
 
 @ObjectType()
 class UserResponse {
@@ -40,13 +42,28 @@ export class UserResolver {
     return user;
   }
 
-  @Mutation(() => UserResponse)
+  @Mutation(() => Boolean)
   async forgotPassword(
     @Arg('email') email: string,
     @Ctx() ctx: HimpunContext,
-  ): Promise<UserResponse> {
-    console.log(ctx, email);
-    return {};
+  ): Promise<Boolean> {
+    if (!isEmail(email)) {
+      return false;
+    }
+
+    const user = await ctx.em.findOne(User, { email })
+
+    // For security reason: 
+    // If email is not in the database, we also return true
+    // but don't send the forgot password email
+    // to avoid phishing the email on our server
+    if (!user) {
+      return true;
+    }
+
+    await sendEmail(email, resetPasswordEmail(ctx, user))
+    
+    return true;
   }
 
   /**
