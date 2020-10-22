@@ -1,4 +1,5 @@
 import { EntityManager, IDatabaseDriver, Connection } from "@mikro-orm/core";
+import {Redis} from 'ioredis';
 import { Request, Response } from "express";
 
 export type HimpunContext = {
@@ -7,4 +8,6 @@ export type HimpunContext = {
   req: Request;
 
   res: Response;
+
+  redis: Redis;
 }
