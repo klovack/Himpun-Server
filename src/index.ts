@@ -13,12 +13,7 @@ import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 import { HimpunContext } from "./types";
-
-const config = {
-  port: 4000,
-  sessionSecret: 'AJFS923klsankanfoqhf3@Q$(UJFOSklj3rfj',
-  corsOrigin: "http://localhost:3000",
-}
+import { Config } from "./config/config";
 
 const main = async () => {
   // Connect to redis
@@ -28,12 +23,13 @@ const main = async () => {
   // Open connection to the database using mikro orm
   const orm = await MikroORM.init(microConfig);
   await orm.getMigrator().up();
-
+  
   const app = express();
+  const config = new Config();
 
   app.use(cors({
     credentials: true,
-    origin: config.corsOrigin,
+    origin: config.webURL,
   }));
 
   // Use Session with redis
@@ -66,7 +62,7 @@ const main = async () => {
     }),
 
     // The apollo graphql needs to know the enitity from the entity manager
-    context: ({req, res}): HimpunContext => ({ em: orm.em, req, res, redis })
+    context: ({req, res}): HimpunContext => ({ em: orm.em, req, res, redis, config })
   });
   apolloServer.applyMiddleware({
     app,
