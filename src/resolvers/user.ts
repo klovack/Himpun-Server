@@ -157,7 +157,9 @@ export class UserResolver {
       return {errors};
     }
     
-    const searchOpt = credentials.usernameOrEmail.includes("@") ? { email: credentials.usernameOrEmail } : { username: credentials.usernameOrEmail };
+    const isSearchingByEmail = credentials.usernameOrEmail.includes("@");
+    const searchBy = isSearchingByEmail ? "email" : "username";
+    const searchOpt = isSearchingByEmail ? { email: credentials.usernameOrEmail } : { username: credentials.usernameOrEmail };
     const user = await ctx.em.findOne(User, searchOpt);
 
     // Check if the user exists
@@ -165,8 +167,8 @@ export class UserResolver {
       return {
         errors: [
           {
-            message: "The username does not exist",
-            field: "username",
+            message: `The ${searchBy} does not exist`,
+            field: searchBy,
           }
         ]
       };
