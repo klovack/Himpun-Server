@@ -45,3 +45,17 @@ export class NameInput {
   @Field()
   lastname: string
 }
+
+@InputType()
+export class ChangePasswordInput {
+  @IsString()
+  @Field()
+  token: string
+
+  @IsString()
+  @Matches(User.PASSWORD_REGEX, {
+    message: "newPassword must have min 8 characters, one lowercase, one uppercase, one special character and one number"
+  })
+  @Field()
+  newPassword: string;
+}

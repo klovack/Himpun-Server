@@ -1,16 +1,17 @@
 import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql";
 import { SyntaxErrorException} from "@mikro-orm/core";
 import { EntityManager } from "@mikro-orm/postgresql";
-import { isEmail, validate } from "class-validator";
+import { isEmail } from "class-validator";
 
 import { HimpunContext } from "../types";
 import { User } from "../entities/User";
 import { FieldError } from "./errors";
 import { COOKIE_NAME } from "../constant";
-import { CredentialInput, NameInput, LoginInput } from "../input-types/user";
+import { CredentialInput, NameInput, LoginInput, ChangePasswordInput } from "../input-types/user";
 import { sendEmail } from "../utils/sendEmail";
 import { resetPasswordEmail } from "../utils/email-templates/reset-password";
 import { isTokenValid } from "../utils/token";
+import { validateGraphQLInput } from "../utils/validate";
 
 @ObjectType()
 class UserResponse {
@@ -57,6 +58,21 @@ export class UserResolver {
     return await isTokenValid(ctx.redis, token);
   }
 
+  @Mutation(() => UserResponse)
+  async changePassword(
+    @Arg('data') data: ChangePasswordInput,
+    @Ctx() _: HimpunContext,
+  ): Promise<UserResponse> {
+    const errors = await validateGraphQLInput(data);
+    if (errors.length > 0) {
+      return {
+        errors,
+      };
+    }
+
+    return {};
+  }
+
   /**
    * Handle the forgot password request
    * 
@@ -101,14 +117,9 @@ export class UserResolver {
     @Ctx() ctx: HimpunContext
   ): Promise<UserResponse> {
     // validate the credentials
-    const validationErrors = await validate(credentials)
-    if (validationErrors.length > 0) {
-      const errors: FieldError[] = [];
-      validationErrors.map((err) => {
-        errors.push(FieldError.fromValidationError(err));
-      });
-
-      return {errors};
+    const errors = await validateGraphQLInput(credentials);
+    if (errors.length > 0) {
+      return { errors };
     }
 
     // Create user object to be validated and save
@@ -185,14 +196,9 @@ export class UserResolver {
     @Arg('credentials') credentials: LoginInput,
     @Ctx() ctx: HimpunContext
   ): Promise<UserResponse> {
-    const validationErrors = await validate(credentials)
-    if (validationErrors.length > 0) {
-      const errors: FieldError[] = [];
-      validationErrors.map((err) => {
-        errors.push(FieldError.fromValidationError(err));
-      });
-
-      return {errors};
+    const errors = await validateGraphQLInput(credentials);
+    if (errors.length > 0) {
+      return { errors };
     }
     
     const isSearchingByEmail = credentials.usernameOrEmail.includes("@");
