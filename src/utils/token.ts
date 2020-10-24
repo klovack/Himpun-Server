@@ -43,11 +43,23 @@ export const generateToken = (tokenType: TokenType, redis: Redis, userId: string
   return token;
 }
 
-export const isTokenValid = async (redis: Redis, token: string): Promise<Boolean> => {
-  const redisToken = await redis.get(FORGOT_PASSWORD_PREFIX + token);
-  if (!redisToken || redisToken.length <= 0) {
-    return false;
+export const isTokenValid = async (tokenType: TokenType, redis: Redis, token: string): Promise<Boolean> => {
+  const isValidToken = await getUserIdFromToken(tokenType, redis, token);
+  return !!isValidToken && isValidToken.length > 0;
+}
+
+export const getUserIdFromToken = async (tokenType: TokenType, redis: Redis, token: string): Promise<string> => {
+  switch (tokenType) {
+    case TokenType.PASSWORD_TOKEN:
+      const redisToken = await redis.get(FORGOT_PASSWORD_PREFIX + token);
+      if (!redisToken || redisToken.length <= 0) {
+        return "";
+      }
+      return redisToken;
+      
+    default:
+      break;
   }
 
-  return true;
+  return "";
 }

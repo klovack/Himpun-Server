@@ -10,7 +10,7 @@ import { COOKIE_NAME } from "../constant";
 import { CredentialInput, NameInput, LoginInput, ChangePasswordInput } from "../input-types/user";
 import { sendEmail } from "../utils/sendEmail";
 import { resetPasswordEmail } from "../utils/email-templates/reset-password";
-import { isTokenValid } from "../utils/token";
+import { getUserIdFromToken, isTokenValid, TokenType } from "../utils/token";
 import { validateGraphQLInput } from "../utils/validate";
 
 @ObjectType()
@@ -55,14 +55,23 @@ export class UserResolver {
     @Arg("token") token: string,
     @Ctx() ctx: HimpunContext
   ): Promise<Boolean> {
-    return await isTokenValid(ctx.redis, token);
+    return await isTokenValid(TokenType.PASSWORD_TOKEN, ctx.redis, token);
   }
 
+  /**
+   * Handle change password.
+   * Validate the token and then find the user based off of the token.
+   * Set the password of the currently retrieved user to the new password.
+   * 
+   * @param data The token and new password
+   * @param ctx the context of the application. It is passed on automatically by apollo
+   */
   @Mutation(() => UserResponse)
   async changePassword(
     @Arg('data') data: ChangePasswordInput,
-    @Ctx() _: HimpunContext,
+    @Ctx() ctx: HimpunContext,
   ): Promise<UserResponse> {
+    // Validate the data which contains newPassword and the token
     const errors = await validateGraphQLInput(data);
     if (errors.length > 0) {
       return {
@@ -70,7 +79,38 @@ export class UserResolver {
       };
     }
 
-    return {};
+    // Get the user id from redis store
+    const userId = await getUserIdFromToken(TokenType.PASSWORD_TOKEN, ctx.redis, data.token)
+    if (userId.length > 0) {
+      return {
+        errors: [
+          {
+            field: "token",
+            message: "token is invalid or expired"
+          }
+        ]
+      }
+    }
+
+    // Find corresponding user for the user id
+    const user = await ctx.em.findOne(User, {id: userId});
+    if (!user) {
+      return {
+        errors: [{
+          field: "user",
+          message: "user no longer exists"
+        }]
+      }
+    }
+
+    // Save the new password
+    await user.generateHashedPassword(data.newPassword);
+    ctx.em.persistAndFlush(user);
+
+    // Login the user
+    ctx.req.session!.userId = user.id;
+
+    return {user};
   }
 
   /**
