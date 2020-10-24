@@ -155,11 +155,12 @@ export class UserResolver {
     const user = await ctx.em.findOne(User, { email })
 
     // For security reason: 
-    // If email is not in the database, we also return true
+    // If email is not in the database, we can also return true
     // but don't send the forgot password email
-    // to avoid phishing the email on our server
+    // to avoid phishing the email on our server.
+    // But here we return true for better user experience
     if (!user) {
-      return true;
+      return false;
     }
 
     await sendEmail(email, resetPasswordEmail(ctx, user))
