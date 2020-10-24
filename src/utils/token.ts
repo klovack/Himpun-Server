@@ -63,3 +63,19 @@ export const getUserIdFromToken = async (tokenType: TokenType, redis: Redis, tok
 
   return "";
 }
+
+export const deleteToken = async (tokenType: TokenType, redis: Redis, token: string): Promise<boolean> => {
+  switch (tokenType) {
+    case TokenType.PASSWORD_TOKEN:
+      const redisToken = await redis.del(FORGOT_PASSWORD_PREFIX + token);
+      if (!redisToken || redisToken <= 0) {
+        return false;
+      }
+      return true;
+      
+    default:
+      break;
+  }
+
+  return false;
+}

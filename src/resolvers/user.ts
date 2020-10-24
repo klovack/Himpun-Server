@@ -10,7 +10,7 @@ import { COOKIE_NAME } from "../constant";
 import { CredentialInput, NameInput, LoginInput, ChangePasswordInput } from "../input-types/user";
 import { sendEmail } from "../utils/sendEmail";
 import { resetPasswordEmail } from "../utils/email-templates/reset-password";
-import { getUserIdFromToken, isTokenValid, TokenType } from "../utils/token";
+import { deleteToken, getUserIdFromToken, isTokenValid, TokenType } from "../utils/token";
 import { validateGraphQLInput } from "../utils/validate";
 
 @ObjectType()
@@ -105,7 +105,31 @@ export class UserResolver {
 
     // Save the new password
     await user.generateHashedPassword(data.newPassword);
-    ctx.em.persistAndFlush(user);
+
+    try {
+      ctx.em.persistAndFlush(user);
+    } catch (error) {
+      const exceptionErr = error as SyntaxErrorException;
+      if (exceptionErr) {
+        if (exceptionErr.code === "23505") {
+          return {
+            errors: [{
+              field: "username",
+              message: "username has already been taken",
+            }]
+          }
+        } else {
+          return {
+            errors: [{
+              field: "server",
+              message: "there has been an error on the server"
+            }]
+          }
+        }
+      }
+    }
+
+    await deleteToken(TokenType.PASSWORD_TOKEN, ctx.redis, data.token)
 
     // Login the user
     ctx.req.session!.userId = user.id;
