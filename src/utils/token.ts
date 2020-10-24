@@ -8,6 +8,16 @@ export enum TokenType {
   PASSWORD_TOKEN,
 }
 
+export interface tokenOptions {
+  expireTime?: number;
+  saveInRedis?: boolean;
+}
+
+export const defaultTokenOptions: tokenOptions = {
+  expireTime: 1000 * 60 * 60 * 24, // 1 day
+  saveInRedis: true,
+}
+
 /**
  * Generate token according to the TokenType
  * 
@@ -15,15 +25,19 @@ export enum TokenType {
  * @param redis IORedis instance to save the token in redis
  * @param userId User Id of the user. It's always necessary to point the token to the id
  */
-export const generateToken = (tokenType: TokenType, redis: Redis, userId: string): string => {
+export const generateToken = (tokenType: TokenType, redis: Redis, userId: string, options = defaultTokenOptions): string => {
   const token = v4();
-  switch (tokenType) {
-    case TokenType.PASSWORD_TOKEN:
-      redis.set(FORGOT_PASSWORD_PREFIX + token, userId, "EX", 1000 * 60 * 60 * 24); // 1 day
-      break;
-  
-    default:
-      break;
+
+  if (options.saveInRedis) {
+    switch (tokenType) {
+      case TokenType.PASSWORD_TOKEN:
+        redis.set(FORGOT_PASSWORD_PREFIX + token, userId, "EX", options.expireTime);
+        break;
+    
+      default:
+        redis.set(token, userId, "EX", options.expireTime);
+        break;
+    }
   }
   
   return token;
