@@ -81,7 +81,7 @@ export class UserResolver {
 
     // Get the user id from redis store
     const userId = await getUserIdFromToken(TokenType.PASSWORD_TOKEN, ctx.redis, data.token)
-    if (userId.length > 0) {
+    if (userId.length <= 0) {
       return {
         errors: [
           {
