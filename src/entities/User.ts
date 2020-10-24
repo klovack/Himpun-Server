@@ -104,7 +104,7 @@ export class User {
    * Verify the password arg with the instance's hashed password
    * @param password plain text password
    */
-  async verifiedPassword(password: string): Promise<boolean> {
+  async verifyPassword(password: string): Promise<boolean> {
     return await argon2.verify(this.password, password); 
   }
 

@@ -10,6 +10,7 @@ import { COOKIE_NAME } from "../constant";
 import { CredentialInput, NameInput, LoginInput } from "../input-types/user";
 import { sendEmail } from "../utils/sendEmail";
 import { resetPasswordEmail } from "../utils/email-templates/reset-password";
+import { isTokenValid } from "../utils/token";
 
 @ObjectType()
 class UserResponse {
@@ -42,6 +43,26 @@ export class UserResolver {
     return user;
   }
 
+  /**
+   * Checks whether the token is valid
+   * 
+   * @param token which is given when user's request forgot password
+   * @param ctx the context of the application. It is passed on automatically by apollo
+   */
+  @Query(() => Boolean)
+  async tokenValid(
+    @Arg("token") token: string,
+    @Ctx() ctx: HimpunContext
+  ): Promise<Boolean> {
+    return await isTokenValid(ctx.redis, token);
+  }
+
+  /**
+   * Handle the forgot password request
+   * 
+   * @param email User's email
+   * @param ctx the context of the application. It is passed on automatically by apollo
+   */
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg('email') email: string,
@@ -192,7 +213,7 @@ export class UserResolver {
     }
 
     // Check if password matched
-    const isValid = await user.verifiedPassword(credentials.password);
+    const isValid = await user.verifyPassword(credentials.password);
     if (!isValid) {
       return {
         errors: [
