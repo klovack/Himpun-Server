@@ -1,5 +1,5 @@
-import { validate } from "class-validator";
-import { Arg, Int, Mutation, Query, Resolver } from "type-graphql";
+import { isUUID, validate } from "class-validator";
+import { Arg, Mutation, Query, Resolver } from "type-graphql";
 
 import { Post } from "../entities/Post";
 
@@ -11,7 +11,11 @@ export class PostResolver {
   }
 
   @Query(() => Post, { nullable: true })
-  post(@Arg('id', () => String) id: string): Promise<Post | null | undefined> {
+  async post(@Arg('id', () => String) id: string): Promise<Post | null | undefined> {
+    if (!isUUID(id)) {
+      return undefined;
+    }
+
     return Post.findOne(id);
   }
 
@@ -40,7 +44,11 @@ export class PostResolver {
     }
 
     if (typeof title !== "undefined") {
-      await Post.update({ id }, {title});
+      try {
+        await Post.update({ id }, {title});
+      } catch (error) {
+        return null;
+      }
     }
 
     return post;
@@ -48,17 +56,13 @@ export class PostResolver {
 
   @Mutation(() => Boolean)
   async deletePost(
-    @Arg('id', () => Int) id: number
+    @Arg('id', () => String) id: string
     ): Promise<boolean> {
-      const del = await Post.delete(id);
-      if (del.affected! > 0) {
+      try {
+        await Post.delete(id);
         return true;
-      }
-
-      if(del.affected! <= 0) {
+      } catch (error) {
         return false;
-      }
-
-      return true;
+      } 
   }
 }
