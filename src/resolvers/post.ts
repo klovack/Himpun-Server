@@ -59,8 +59,15 @@ export class PostResolver {
     @Arg('id', () => String) id: string
     ): Promise<boolean> {
       try {
-        await Post.delete(id);
-        return true;
+        const del = await Post.delete(id);
+        if (del.affected! > 0) {
+          return true;
+        }
+        if (del.affected! <= 0) {
+          return false;
+        }
+        
+        return false;
       } catch (error) {
         return false;
       } 
