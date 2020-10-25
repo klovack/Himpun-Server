@@ -43,7 +43,8 @@
     "nanoid": "^3.1.15",
     "nodemailer": "^6.4.14",
     "pg": "^8.4.1",
-    "type-graphql": "^1.1.0"
+    "type-graphql": "^1.1.0",
+    "typeorm": "^0.2.28"
   },
   "mikro-orm": {
     "useTsNode": true,
