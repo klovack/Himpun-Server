@@ -1,5 +1,5 @@
 import {Redis} from "ioredis";
-import { v4 } from "uuid";
+import { nanoid } from 'nanoid';
 
 import { FORGOT_PASSWORD_PREFIX } from "../constant";
 
@@ -26,7 +26,7 @@ export const defaultTokenOptions: tokenOptions = {
  * @param userId User Id of the user. It's always necessary to point the token to the id
  */
 export const generateToken = (tokenType: TokenType, redis: Redis, userId: string, options = defaultTokenOptions): string => {
-  const token = v4();
+  const token = nanoid();
 
   if (options.saveInRedis) {
     switch (tokenType) {

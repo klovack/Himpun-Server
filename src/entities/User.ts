@@ -1,7 +1,7 @@
 import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 import { Field, ObjectType } from "type-graphql";
 import argon2 from 'argon2';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import { IsEmail, IsString, MinLength, NotContains } from "class-validator";
 
 @ObjectType()
@@ -13,6 +13,11 @@ export class User {
   static USERNAME_MIN_LENGTH: number = 3;
 
   /**
+   * Length of the user id.
+   */
+  static USER_ID_LENGTH: number = 15;
+
+  /**
    * Password validation using regex
    * 
    *  - at least 8 characters
@@ -22,7 +27,7 @@ export class User {
   static PASSWORD_REGEX = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/;
   
   @Field(() => String)
-  @PrimaryKey({type: 'text', unique: true, onCreate: () => uuidv4()})
+  @PrimaryKey({type: 'text', unique: true, onCreate: () => nanoid(User.USER_ID_LENGTH)})
   id!: string;
 
   @Field(() => String)
@@ -87,8 +92,8 @@ export class User {
    * When creating User's instance using Mikro ORM, ID is automatically generated
    * using Mikro ORM Lifecycle Hooks.
    */
-  generateId() {
-    this.id = uuidv4();
+  generateId(additionalLength: number = 0) {
+    this.id = nanoid(User.USER_ID_LENGTH + additionalLength);
   }
   
   /**
