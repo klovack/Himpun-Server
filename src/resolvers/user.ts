@@ -1,7 +1,5 @@
 import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql";
-import { SyntaxErrorException} from "@mikro-orm/core";
-import { EntityManager } from "@mikro-orm/postgresql";
-import { isEmail } from "class-validator";
+import { isEmail, validate } from "class-validator";
 
 import { HimpunContext } from "../types";
 import { User } from "../entities/User";
@@ -32,16 +30,12 @@ export class UserResolver {
   @Query(() => User, {nullable: true})
   async profile(
     @Ctx() ctx: HimpunContext
-  ): Promise<User | null> {
+  ): Promise<User | null | undefined> {
     if (!ctx.req.session!.userId) {
       return null;
     }
 
-    const user = await ctx.em.findOne(User, {
-      id: ctx.req.session!.userId,
-    });
-
-    return user;
+    return User.findOne(ctx.req.session!.userId);
   }
 
   /**
@@ -93,7 +87,7 @@ export class UserResolver {
     }
 
     // Find corresponding user for the user id
-    const user = await ctx.em.findOne(User, {id: userId});
+    const user = await User.findOne(userId);
     if (!user) {
       return {
         errors: [{
@@ -106,29 +100,10 @@ export class UserResolver {
     // Save the new password
     await user.generateHashedPassword(data.newPassword);
 
-    try {
-      ctx.em.persistAndFlush(user);
-    } catch (error) {
-      const exceptionErr = error as SyntaxErrorException;
-      if (exceptionErr) {
-        if (exceptionErr.code === "23505") {
-          return {
-            errors: [{
-              field: "username",
-              message: "username has already been taken",
-            }]
-          }
-        } else {
-          return {
-            errors: [{
-              field: "server",
-              message: "there has been an error on the server"
-            }]
-          }
-        }
-      }
-    }
-
+    await User.update(userId, {
+      password: user.password,
+    });
+  
     await deleteToken(TokenType.PASSWORD_TOKEN, ctx.redis, data.token)
 
     // Login the user
@@ -152,7 +127,7 @@ export class UserResolver {
       return false;
     }
 
-    const user = await ctx.em.findOne(User, { email })
+    const user = await User.findOne({ where: { email } });
 
     // For security reason: 
     // If email is not in the database, we can also return true
@@ -188,57 +163,40 @@ export class UserResolver {
     }
 
     // Create user object to be validated and save
-    let user = ctx.em.create(User, new User({
-        username: credentials.username,
-        email: credentials.email,
-        firstname: options.firstname, 
-        lastname: options.lastname
-      })
-    );
+    let user = new User({
+      username: credentials.username,
+      email: credentials.email,
+      firstname: options.firstname,
+      lastname: options.lastname,
+    });
 
     // Generate necessary fields
-    user.generateId();
+    // user.generateId();
     await user.generateHashedPassword(credentials.password);
 
-    try {
-      // Because the user object is created using KnexQuery
-      // The object that is passed on to the insert should be created manually.
-      // It's just not possible to give the `user` into the insert function
-      const result = await (ctx.em as EntityManager).createQueryBuilder(User)
-      .getKnexQuery().insert({
-          id: user.id,
-          username: user.username,
-          created_at: user.createdAt,
-          email: user.email,
-          updated_at: user.updatedAt,
-          password: user.password,
-          firstname: user.firstname,
-          lastname: user.lastname,
-        })
-        .returning("*");
-        
-      user = result[0];
+    // Validate the user
+    const valErrors = await validate(user);
+    if (valErrors.length > 0) {
+      return { errors: FieldError.fromValidationErrors(valErrors) };
+    }
 
-    } catch(err: any) {
-      const exceptionErr = err as SyntaxErrorException;
+    try {
+      await user.save();
+    } catch(exceptionErr: any) {
       if (exceptionErr) {
         if (exceptionErr.code === "23505") {
           return {
-            errors: [
-              {
-                field: "username",
-                message: "username has already been taken",
-              }
-            ]
+            errors: [{
+              field: "username",
+              message: "username has already been taken",
+            }]
           }
         } else {
           return {
-            errors: [
-              {
-                field: "server",
-                message: "there has been an error on the server"
-              }
-            ]
+            errors: [{
+              field: "server",
+              message: "there has been an error on the server"
+            }]
           }
         }
       }
@@ -269,7 +227,7 @@ export class UserResolver {
     const isSearchingByEmail = credentials.usernameOrEmail.includes("@");
     const searchBy = isSearchingByEmail ? "email" : "username";
     const searchOpt = isSearchingByEmail ? { email: credentials.usernameOrEmail } : { username: credentials.usernameOrEmail };
-    const user = await ctx.em.findOne(User, searchOpt);
+    const user = await User.findOne({ where: searchOpt });
 
     // Check if the user exists
     if (!user) {
@@ -309,7 +267,6 @@ export class UserResolver {
   ) {
     return new Promise((resolve) => ctx.req.session?.destroy(err => {
       if (err) {
-        console.log(err);
         resolve(false);
         return;
       }

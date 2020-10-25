@@ -15,4 +15,13 @@ export class FieldError {
       message: Object.keys(error.constraints!).map((key) => error.constraints![key]).join(". "),
     };
   }
+
+  static fromValidationErrors(errors: ValidationError[]): FieldError[] {
+    let result: FieldError[] = [];
+    errors.forEach((err) => {
+      result.push(FieldError.fromValidationError(err));
+    });
+
+    return result;
+  }
 }

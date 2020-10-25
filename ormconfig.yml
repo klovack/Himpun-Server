@@ -1,0 +1,7 @@
+default: # default connection
+  type: "postgres"
+  username: "postgres"
+  password: "my-secret-password"
+  database: "himpun-db"
+  logging: true
+  synchronize: true
