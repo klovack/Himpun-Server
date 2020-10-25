@@ -1,4 +1,5 @@
 import { __prod__ } from "../constant";
+import devConfig from './config.dev.json';
 
 export class Config {
   port: number;
@@ -7,9 +8,7 @@ export class Config {
   
   constructor() {
     if (!__prod__) {
-      this.port = 4000;
-      this.sessionSecret = "AJFS923klsankanfoqhf3@Q$(UJFOSklj3rfj";
-      this.webURL = "http://localhost:3000";
+      return devConfig;
     }
   }
 }
