@@ -182,8 +182,24 @@ export class UserResolver {
 
     try {
       await user.save();
-    } catch(err: any) {
-      console.log(err);
+    } catch(exceptionErr: any) {
+      if (exceptionErr) {
+        if (exceptionErr.code === "23505") {
+          return {
+            errors: [{
+              field: "username",
+              message: "username has already been taken",
+            }]
+          }
+        } else {
+          return {
+            errors: [{
+              field: "server",
+              message: "there has been an error on the server"
+            }]
+          }
+        }
+      }
     }
 
     // Store user ID session and keep them logged in
