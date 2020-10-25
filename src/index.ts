@@ -29,6 +29,10 @@ const main = async () => {
     ],
   })
   const typeOrmConnection = await createConnection(typeOrmConnectionOption);
+
+  if (!typeOrmConnection.isConnected) {
+    await typeOrmConnection.connect();
+  }
   
   const app = express();
   const config = new Config();
