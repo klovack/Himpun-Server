@@ -23,25 +23,24 @@ export class Post extends BaseEntity {
   @Column({ type: 'text' })
   title!: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   @Column({ type: 'text' })
-  body: string;
+  body?: string;
 
-  @Field(() => Media)
+  @Field(() => Media, {nullable: true})
   @ManyToOne(() => Media)
   @JoinColumn({ name: "featured_image_id" })
-  featuredImage: Media;
+  featuredImage?: Media;
 
-  @Field(() => String)
-  @Column()
-  authorId: string;
-
+  @Field(() => User)
   @ManyToOne(() => User, user => user.posts, {cascade: true})
   author: User;
 
+  @Field(() => [User], { defaultValue: [] })
   @ManyToMany(() => User, user => user.votedPosts, { cascade: true })
   votes: User[];
 
+  @Field(() => [User], { defaultValue: [] })
   @ManyToMany(() => User, user => user.likedPosts, { cascade: true })
   likes: User[];
 
@@ -49,10 +48,16 @@ export class Post extends BaseEntity {
     super();
     if (options) {
       this.title = options.title;
+      this.body = options.body;
+      this.featuredImage = options.featuredImage;
+      this.author = options.author;
     }
   }
 }
 
 export interface PostOptions {
-  title: string;
+  title: string,
+  body?: string,
+  featuredImage?: Media,
+  author: User,
 }

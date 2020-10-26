@@ -29,8 +29,8 @@ const main = async () => {
   Object.assign(typeOrmConnectionOption, {
     entities: [
       User,
-      Post,
       Media,
+      Post,
     ],
   })
   const typeOrmConnection = await createConnection(typeOrmConnectionOption);

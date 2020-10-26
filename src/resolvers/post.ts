@@ -1,7 +1,12 @@
 import { isUUID, validate } from "class-validator";
-import { Arg, Mutation, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
 
+import { PostInput } from "../input-types/post";
 import { Post } from "../entities/Post";
+import { Media } from "../entities/Media";
+import { HimpunContext } from "../types";
+import { isAuth } from "../middlewares/isAuth";
+import { User } from "../entities/User";
 
 @Resolver(Post)
 export class PostResolver {
@@ -20,12 +25,31 @@ export class PostResolver {
   }
 
   @Mutation(() => Post, {nullable: true})
-  async createPost(@Arg('title', () => String) title: string): Promise<Post|null> {
-    const post = new Post({
-      title,
-    });
-    const errors = await validate(post);
+  @UseMiddleware(isAuth)
+  async createPost(
+    @Arg('data', () => PostInput) data: PostInput,
+    @Ctx() ctx: HimpunContext,
+    ): Promise<Post|null> {
+    let errors = await validate(data);
     if (errors.length > 0) {
+      console.log(errors);
+      return null;
+    }
+
+    const featuredImage = await Media.findOne({where: {id: data.featuredImageId}});
+    const author = await User.findOne(ctx.req.session?.userId);
+    if (!author) {
+      return null;
+    }
+
+    const post = new Post({
+      ...data,
+      featuredImage,
+      author,
+    });
+    errors = await validate(post);
+    if (errors.length > 0) {
+      console.log(errors);
       return null;
     }
 
