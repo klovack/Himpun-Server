@@ -1,6 +1,6 @@
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
-import { buildSchema } from 'type-graphql';
+import { buildSchema, registerEnumType } from 'type-graphql';
 import Redis from 'ioredis';
 import session from 'express-session';
 import connectRedis from "connect-redis";
@@ -15,17 +15,22 @@ import { HimpunContext } from "./types";
 import { Config } from "./config/config";
 import { User } from "./entities/User";
 import { Post } from "./entities/Post";
+import { Media, MediaType, registerMediaTypeEnum } from './entities/Media';
 
 const main = async () => {
   // Connect to redis
   const RedisStore = connectRedis(session);
   const redis = new Redis();
 
+  // Registering all enum types
+  registerEnumType(MediaType, registerMediaTypeEnum);
+
   const typeOrmConnectionOption = await getConnectionOptions();
   Object.assign(typeOrmConnectionOption, {
     entities: [
       User,
-      Post
+      Post,
+      Media,
     ],
   })
   const typeOrmConnection = await createConnection(typeOrmConnectionOption);

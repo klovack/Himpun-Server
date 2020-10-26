@@ -2,7 +2,9 @@ import { Field, ObjectType } from "type-graphql";
 import argon2 from 'argon2';
 import { nanoid } from 'nanoid';
 import { IsEmail, IsString, MinLength, NotContains } from "class-validator";
-import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Post } from "./Post";
+import { Media } from "./Media";
 
 @ObjectType()
 @Entity()
@@ -64,6 +66,18 @@ export class User extends BaseEntity {
   @Field(() => String, { nullable: true })
   @Column({ type: 'text', nullable: true })
   lastname?: string;
+
+  @OneToMany(() => Post, post => post.author)
+  posts: Post[];
+
+  @OneToMany(() => Media, media => media.author)
+  medias: Media[];
+
+  @ManyToMany(() => Post, post => post.votes)
+  votedPosts: Post[];
+
+  @ManyToMany(() => Post, post => post.likes)
+  likedPosts: Post[];
 
   /**
    * This will only create the instance of the user without the password.
