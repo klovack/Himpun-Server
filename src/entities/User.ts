@@ -2,7 +2,7 @@ import { Field, ObjectType } from "type-graphql";
 import argon2 from 'argon2';
 import { nanoid } from 'nanoid';
 import { IsEmail, IsString, MinLength, NotContains } from "class-validator";
-import { BaseEntity, Column, CreateDateColumn, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Post } from "./Post";
 import { Media } from "./Media";
 
@@ -67,17 +67,34 @@ export class User extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   lastname?: string;
 
+  @Field(() => [Post], { defaultValue: [] })
   @OneToMany(() => Post, post => post.author)
   posts: Post[];
 
+  @Field(() => [Media], { defaultValue: [] })
   @OneToMany(() => Media, media => media.author)
   medias: Media[];
 
-  @ManyToMany(() => Post, post => post.votes)
-  votedPosts: Post[];
+  /**
+   * I don't think these fields are necessary
+   * because, it's redundant to save these data
+   * when we can get it by modifying sql query
+  */
+ 
+  // @Field(() => [Post], { defaultValue: [] })
+  // @ManyToMany(() => Post, post => post.votes)
+  // @JoinTable()
+  // votedPosts: Post[];
 
-  @ManyToMany(() => Post, post => post.likes)
-  likedPosts: Post[];
+  // @Field(() => [Post], { defaultValue: [] })
+  // @ManyToMany(() => Post, post => post.likes)
+  // @JoinTable()
+  // likedPosts: Post[];
+  
+  // @Field(() => [Post], { defaultValue: [] })
+  // @ManyToMany(() => Post, post => post.likes)
+  // @JoinTable()
+  // dislikedPosts: Post[];
 
   /**
    * This will only create the instance of the user without the password.

@@ -1,7 +1,7 @@
 import { isUUID, validate } from "class-validator";
 import { Arg, Ctx, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
 
-import { PostInput } from "../input-types/post";
+import { PostFilterInput, PostInput } from "../input-types/post";
 import { Post } from "../entities/Post";
 import { Media } from "../entities/Media";
 import { HimpunContext } from "../types";
@@ -11,8 +11,14 @@ import { User } from "../entities/User";
 @Resolver(Post)
 export class PostResolver {
   @Query(() => [Post])
-  posts(): Promise<Post[]> {
-    return Post.find();
+  posts(
+    @Arg('filter', () => PostFilterInput, {nullable: true}) filter?: PostFilterInput
+  ): Promise<Post[]> {
+    console.log(filter?.toQuery());
+    return Post.find({
+      relations: ["author", "votes", "likes", "dislikes"],
+      where: [filter?.toQuery()],
+    });
   }
 
   @Query(() => Post, { nullable: true })
@@ -21,7 +27,8 @@ export class PostResolver {
       return undefined;
     }
 
-    return Post.findOne(id);
+    return Post.findOne(id, {relations: ["author", "votes", "likes", "dislikes"]})
+    // return Post.findOne(id);
   }
 
   @Mutation(() => Post, {nullable: true})

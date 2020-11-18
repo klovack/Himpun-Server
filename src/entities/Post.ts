@@ -1,5 +1,5 @@
 import { Field, ObjectType } from "type-graphql";
-import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Media } from "./Media";
 import { User } from "./User";
 
@@ -37,12 +37,19 @@ export class Post extends BaseEntity {
   author: User;
 
   @Field(() => [User], { defaultValue: [] })
-  @ManyToMany(() => User, user => user.votedPosts, { cascade: true })
+  @ManyToMany(() => User)
+  @JoinTable()
   votes: User[];
 
   @Field(() => [User], { defaultValue: [] })
-  @ManyToMany(() => User, user => user.likedPosts, { cascade: true })
+  @ManyToMany(() => User)
+  @JoinTable()
   likes: User[];
+
+  @Field(() => [User], { defaultValue: [] })
+  @ManyToMany(() => User)
+  @JoinTable()
+  dislikes: User[];
 
   constructor(options?: PostOptions) {
     super();
