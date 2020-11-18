@@ -109,8 +109,10 @@ export class User extends BaseEntity {
    * This function should only be created if the User's instance is not created
    * by Mikro ORM.
    * 
-   * When creating User's instance using Mikro ORM, ID is automatically generated
-   * using Mikro ORM Lifecycle Hooks.
+   * When creating User's instance using Type ORM, ID is automatically generated
+   * using Type ORM Lifecycle Hooks.
+   * 
+   * @deprecated
    */
   generateId(additionalLength: number = 0) {
     this.id = nanoid(User.USER_ID_LENGTH + additionalLength);

@@ -170,8 +170,7 @@ export class UserResolver {
       lastname: options.lastname,
     });
 
-    // Generate necessary fields
-    // user.generateId();
+    // Generate password
     await user.generateHashedPassword(credentials.password);
 
     // Validate the user
