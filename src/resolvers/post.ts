@@ -14,10 +14,9 @@ export class PostResolver {
   posts(
     @Arg('filter', () => PostFilterInput, {nullable: true}) filter?: PostFilterInput
   ): Promise<Post[]> {
-    console.log(filter?.toQuery());
     return Post.find({
       relations: ["author", "votes", "likes", "dislikes"],
-      where: [filter?.toQuery()],
+      where: !!filter ? [filter?.toQuery()] : []
     });
   }
 
