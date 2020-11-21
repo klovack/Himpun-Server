@@ -63,6 +63,7 @@ export class PostResolver {
   }
 
   @Mutation(() => Post, { nullable: true })
+  @UseMiddleware(isAuth)
   async updatePost(
     @Arg('id', () => String) id: string,
     @Arg('title', () => String, { nullable: true }) title: string
@@ -85,6 +86,7 @@ export class PostResolver {
   }
 
   @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
   async deletePost(
     @Arg('id', () => String) id: string
     ): Promise<boolean> {
