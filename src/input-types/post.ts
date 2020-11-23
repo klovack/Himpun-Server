@@ -1,4 +1,4 @@
-import { IsString, IsUUID, ValidateIf } from "class-validator"
+import { IsBoolean, IsString, IsUUID, ValidateIf } from "class-validator"
 import { InputType, Field } from "type-graphql"
 import { Between, FindOperator, In, LessThanOrEqual, Like, MoreThanOrEqual } from "typeorm";
 import { TimespanInput } from "./util";
@@ -17,6 +17,11 @@ export class PostInput {
   @IsUUID()
   @Field(() => String, { nullable: true })
   featuredImageId?: String;
+
+  @ValidateIf((s) => s !== undefined || s !== null )
+  @IsBoolean()
+  @Field(() => Boolean, { defaultValue: false })
+  isPublished?: boolean;
 }
 
 @InputType()
@@ -25,6 +30,11 @@ export class PostFilterInput {
   @IsUUID()
   @Field(() => String, { nullable: true })
   author?: string;
+
+  @ValidateIf((s) => s !== undefined || s !== null )
+  @IsBoolean()
+  @Field(() => Boolean, { nullable: true })
+  isPublished?: boolean;
 
   @ValidateIf((s) => !!s && s.length > 0)
   @IsUUID()
@@ -55,7 +65,8 @@ export class PostFilterInput {
     dislikes?: FindOperator<string | undefined>,
     likes?: FindOperator<string | undefined>,
     title?: FindOperator<string>,
-    createdAt?: FindOperator<Date | undefined>
+    createdAt?: FindOperator<Date | undefined>,
+    isPublished?: Boolean,
   } {
     let result: {
       author?: string,
@@ -63,7 +74,8 @@ export class PostFilterInput {
       dislikes?: FindOperator<string | undefined>,
       likes?: FindOperator<string | undefined>,
       title?: FindOperator<string>,
-      createdAt?: FindOperator<Date | undefined>
+      createdAt?: FindOperator<Date | undefined>,
+      isPublished?: Boolean,
     } = {};
 
     if (!!this.author) {
@@ -84,6 +96,10 @@ export class PostFilterInput {
 
     if (!!this.searchableWord) {
       result.title = Like(`%${this.searchableWord}%`);
+    }
+
+    if (this.isPublished !== undefined) {
+      result.isPublished = this.isPublished;
     }
 
     if (!!this.timespan) {

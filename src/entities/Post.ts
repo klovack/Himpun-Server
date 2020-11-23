@@ -27,6 +27,10 @@ export class Post extends BaseEntity {
   @Column({ type: 'text' })
   body?: string;
 
+  @Field(() => Boolean, { defaultValue: false })
+  @Column({ type: 'bool'})
+  isPublished: boolean;
+
   @Field(() => Media, {nullable: true})
   @ManyToOne(() => Media)
   @JoinColumn({ name: "featured_image_id" })
@@ -58,6 +62,7 @@ export class Post extends BaseEntity {
       this.body = options.body;
       this.featuredImage = options.featuredImage;
       this.author = options.author;
+      this.isPublished = options.isPublished ? options.isPublished : false;
     }
   }
 }
@@ -67,4 +72,5 @@ export interface PostOptions {
   body?: string,
   featuredImage?: Media,
   author: User,
+  isPublished?: boolean,
 }
