@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import { ApolloServer } from 'apollo-server-express';
 import { buildSchema, registerEnumType } from 'type-graphql';
 import Redis from 'ioredis';
@@ -32,8 +33,10 @@ const main = async () => {
       Media,
       Post,
     ],
+    migrations: [path.join(__dirname, './migrations/*')]
   })
   const typeOrmConnection = await createConnection(typeOrmConnectionOption);
+  // await typeOrmConnection.runMigrations();
 
   if (!typeOrmConnection.isConnected) {
     await typeOrmConnection.connect();

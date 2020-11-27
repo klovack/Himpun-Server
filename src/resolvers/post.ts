@@ -1,5 +1,5 @@
 import { isUUID, validate } from "class-validator";
-import { Arg, Ctx, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
+import { Arg, Ctx, Int, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
 
 import { PostFilterInput, PostInput } from "../input-types/post";
 import { Post } from "../entities/Post";
@@ -12,11 +12,19 @@ import { User } from "../entities/User";
 export class PostResolver {
   @Query(() => [Post])
   posts(
+    @Arg('limit', () => Int) limit: number,
+    @Arg('cursor', () => String, { nullable: true }) cursor?: string,
     @Arg('filter', () => PostFilterInput, {nullable: true}) filter?: PostFilterInput
   ): Promise<Post[]> {
+    const realLimit = Math.min(50, Math.max(0, limit));
+    
     return Post.find({
       relations: ["author", "votes", "likes", "dislikes"],
-      where: !!filter ? [filter?.toQuery()] : []
+      where: !!filter ? [filter?.toQuery(cursor)] : [],
+      order: {
+        createdAt: "DESC",
+      },
+      take: realLimit,
     });
   }
 

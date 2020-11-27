@@ -59,7 +59,7 @@ export class PostFilterInput {
   @Field(() => TimespanInput, { nullable: true })
   timespan?: TimespanInput;
 
-  toQuery(): {
+  toQuery(cursor?: string): {
     author?: string,
     votes?: FindOperator<string | undefined>,
     dislikes?: FindOperator<string | undefined>,
@@ -103,6 +103,10 @@ export class PostFilterInput {
     }
 
     if (!!this.timespan) {
+      if (!!cursor) {
+        this.timespan.timeStart = new Date(parseInt(cursor));
+      }
+
       if (!!this.timespan.timeStart && !!this.timespan.timeEnd) {
         result.createdAt = Between(this.timespan.timeStart, this.timespan.timeEnd);
       } else if (!!this.timespan.timeStart) {
