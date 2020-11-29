@@ -1,5 +1,5 @@
 import { isUUID, validate } from "class-validator";
-import { Arg, Ctx, Int, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
+import { Arg, Ctx, FieldResolver, Int, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
 
 import { PostFilterInput, PostInput } from "../input-types/post";
 import { Post } from "../entities/Post";
@@ -10,6 +10,13 @@ import { User } from "../entities/User";
 
 @Resolver(Post)
 export class PostResolver {
+  @FieldResolver(() => String)
+  bodySnippet(
+    @Root() root: Post
+  ) {
+    return root.body?.slice(0, 100);
+  }
+  
   @Query(() => [Post])
   posts(
     @Arg('limit', () => Int) limit: number,
