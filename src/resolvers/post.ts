@@ -1,5 +1,5 @@
 import { isUUID, validate } from "class-validator";
-import { Arg, Ctx, FieldResolver, Int, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
+import { Arg, Ctx, Field, FieldResolver, Int, Mutation, ObjectType, Query, Resolver, Root, UseMiddleware } from "type-graphql";
 
 import { PostFilterInput, PostInput } from "../input-types/post";
 import { Post } from "../entities/Post";
@@ -8,6 +8,15 @@ import { HimpunContext } from "../types";
 import { isAuth } from "../middlewares/isAuth";
 import { User } from "../entities/User";
 import { LessThan } from "typeorm";
+
+@ObjectType()
+class PostPaginationResponse {
+  @Field(() => [Post])
+  posts: Post[];
+
+  @Field(() => Boolean)
+  hasMore: boolean;
+}
 
 @Resolver(Post)
 export class PostResolver {
@@ -18,15 +27,15 @@ export class PostResolver {
     return root.body?.slice(0, 100);
   }
   
-  @Query(() => [Post])
-  posts(
+  @Query(() => PostPaginationResponse)
+  async posts(
     @Arg('limit', () => Int) limit: number,
     @Arg('cursor', () => String, { nullable: true }) cursor?: string,
     @Arg('filter', () => PostFilterInput, {nullable: true}) filter?: PostFilterInput
-  ): Promise<Post[]> {
+  ): Promise<PostPaginationResponse> {
     const realLimit = Math.min(50, Math.max(0, limit));
     
-    return Post.find({
+    const allPosts = await Post.find({
       relations: ["author", "votes", "likes", "dislikes"],
       where: !!filter ? [filter?.toQuery(cursor)] : !!cursor ? [{
         createdAt: LessThan(new Date(parseInt(cursor)))
@@ -34,8 +43,23 @@ export class PostResolver {
       order: {
         createdAt: "DESC",
       },
-      take: realLimit,
+
+      // +1 is to check whether there's more than post left.
+      // e.g:
+      //  limit = 10
+      //  take = 11
+      // if it found 11 posts, that means there's still posts in the database left.
+      take: (realLimit + 1),
     });
+
+    return {
+      // return only until the `realLimit`
+      posts: allPosts.slice(0, realLimit + 1),
+
+      // If the length of all the posts found is more than the limit,
+      // that means the database has still more post.
+      hasMore: allPosts.length > realLimit,
+    };
   }
 
   @Query(() => Post, { nullable: true })
