@@ -36,7 +36,8 @@ const main = async () => {
     migrations: [path.join(__dirname, './migrations/*')]
   })
   const typeOrmConnection = await createConnection(typeOrmConnectionOption);
-  // await typeOrmConnection.runMigrations();
+  // await Post.delete({});
+  await typeOrmConnection.runMigrations();
 
   if (!typeOrmConnection.isConnected) {
     await typeOrmConnection.connect();

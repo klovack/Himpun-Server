@@ -1,6 +1,6 @@
 import { IsBoolean, IsString, IsUUID, ValidateIf } from "class-validator"
 import { InputType, Field } from "type-graphql"
-import { Between, FindOperator, In, LessThanOrEqual, Like, MoreThanOrEqual } from "typeorm";
+import { Between, FindOperator, In, LessThan, Like, MoreThan } from "typeorm";
 import { TimespanInput } from "./util";
 
 @InputType()
@@ -110,9 +110,9 @@ export class PostFilterInput {
       if (!!this.timespan.timeStart && !!this.timespan.timeEnd) {
         result.createdAt = Between(this.timespan.timeStart, this.timespan.timeEnd);
       } else if (!!this.timespan.timeStart) {
-        result.createdAt = MoreThanOrEqual(this.timespan.timeStart);
+        result.createdAt = MoreThan(this.timespan.timeStart);
       } else if (!!this.timespan.timeEnd) {
-        result.createdAt = LessThanOrEqual(this.timespan.timeEnd);
+        result.createdAt = LessThan(this.timespan.timeEnd);
       }
     }
 

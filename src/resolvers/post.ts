@@ -7,6 +7,7 @@ import { Media } from "../entities/Media";
 import { HimpunContext } from "../types";
 import { isAuth } from "../middlewares/isAuth";
 import { User } from "../entities/User";
+import { LessThan } from "typeorm";
 
 @Resolver(Post)
 export class PostResolver {
@@ -27,7 +28,9 @@ export class PostResolver {
     
     return Post.find({
       relations: ["author", "votes", "likes", "dislikes"],
-      where: !!filter ? [filter?.toQuery(cursor)] : [],
+      where: !!filter ? [filter?.toQuery(cursor)] : !!cursor ? [{
+        createdAt: LessThan(new Date(parseInt(cursor)))
+      }] : [],
       order: {
         createdAt: "DESC",
       },
