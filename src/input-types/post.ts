@@ -103,17 +103,34 @@ export class PostFilterInput {
     }
 
     if (!!this.timespan) {
+      // If there's cursor, that means get ready for pagination
       if (!!cursor) {
-        this.timespan.timeStart = new Date(parseInt(cursor));
-      }
+        const cursorDate = new Date(parseInt(cursor));
+        result.createdAt = Between(result.createdAt?.value, cursorDate);
 
-      if (!!this.timespan.timeStart && !!this.timespan.timeEnd) {
-        result.createdAt = Between(this.timespan.timeStart, this.timespan.timeEnd);
-      } else if (!!this.timespan.timeStart) {
-        result.createdAt = MoreThan(this.timespan.timeStart);
-      } else if (!!this.timespan.timeEnd) {
-        result.createdAt = LessThan(this.timespan.timeEnd);
+        if (!!this.timespan.timeStart && !!this.timespan.timeEnd) {
+          const realEnd = this.timespan.timeEnd > cursorDate ? cursorDate : this.timespan.timeEnd;
+          result.createdAt = Between(this.timespan.timeStart, realEnd);
+        } else if (!!this.timespan.timeStart) {
+          result.createdAt = Between(this.timespan.timeStart, cursorDate);
+        } else if (!!this.timespan.timeEnd) {
+          const realEnd = this.timespan.timeEnd > cursorDate ? cursorDate : this.timespan.timeEnd;
+          result.createdAt = LessThan(realEnd);
+        }
+
+        // Do the normal filter of timespan if it's the first page (no cursor)
+      } else {
+        if (!!this.timespan.timeStart && !!this.timespan.timeEnd) {
+          result.createdAt = Between(this.timespan.timeStart, this.timespan.timeEnd);
+        } else if (!!this.timespan.timeStart) {
+          result.createdAt = MoreThan(this.timespan.timeStart);
+        } else if (!!this.timespan.timeEnd) {
+          result.createdAt = LessThan(this.timespan.timeEnd);
+        }
       }
+      
+    } else if (!!cursor) {
+      result.createdAt = LessThan(new Date(parseInt(cursor)));
     }
 
     return result;
