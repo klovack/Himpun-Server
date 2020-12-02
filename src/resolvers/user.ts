@@ -1,4 +1,4 @@
-import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Field, FieldResolver, Mutation, ObjectType, Query, Resolver, Root } from "type-graphql";
 import { isEmail, validate } from "class-validator";
 
 import { HimpunContext } from "../types";
@@ -22,6 +22,18 @@ class UserResponse {
 
 @Resolver(User)
 export class UserResolver {
+  @FieldResolver(() => String)
+  email(
+    @Root() user: User,
+    @Ctx() ctx: HimpunContext,  
+  ) {
+    if (ctx.req.session?.userId === user.id) {
+      return user.email;
+    }
+
+    return "";
+  }
+  
   /**
    * Handle getting the profile of the user
    * 
