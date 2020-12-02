@@ -47,7 +47,7 @@ export class UserResolver {
       return null;
     }
 
-    return User.findOne(ctx.req.session!.userId);
+    return User.findOne(ctx.req.session!.userId, {relations: ["posts"]});
   }
 
   /**
