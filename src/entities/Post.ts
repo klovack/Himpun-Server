@@ -1,4 +1,4 @@
-import { Field, ObjectType } from "type-graphql";
+import { Field, Int, ObjectType } from "type-graphql";
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Media } from "./Media";
 import { User } from "./User";
@@ -30,6 +30,10 @@ export class Post extends BaseEntity {
   @Field(() => Boolean, { defaultValue: false })
   @Column({ type: 'bool'})
   isPublished: boolean;
+
+  @Field(() => Int, { defaultValue: 0 })
+  @Column({ type: "int", nullable: true })
+  reads: number;
 
   @Field(() => Media, {nullable: true})
   @ManyToOne(() => Media)

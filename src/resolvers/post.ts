@@ -148,6 +148,49 @@ export class PostResolver {
   }
 
   @Mutation(() => Boolean)
+  async readPost(
+    @Arg('postId', () => String) postId: string,
+    @Ctx() ctx: HimpunContext,
+  ) {
+    // Check for the valid id
+    if (!isUUID(postId)) {
+      return false;
+    }
+    
+    // Check for the valid userId
+    const { userId } = ctx.req.session!;
+    if (!userId) {
+      return false;
+    }
+
+    // Fetch the postItem based off of the postId and
+    // return false if no post is associated with that id
+    const postItem = await Post.findOne(postId);
+    if (!postItem) {
+      return false;
+    }
+
+    // check if the reads is null, and create new one if it is.
+    if (!!postItem.reads || postItem.reads < 0) {
+      postItem.reads = 0;
+    }
+    // add +1 to the reads.
+    postItem.reads++;
+
+    // save
+    await postItem.save();
+
+    return true;
+  }
+
+  /**
+   * Vote the post will use the current login user and push that to the votes list
+   * 
+   * @param postId 
+   * @param isUpvote 
+   * @param ctx 
+   */
+  @Mutation(() => Boolean)
   async vote(
     @Arg('postId', () => String) postId: string,
     @Arg('isUpvote', () => Boolean, {defaultValue: true}) isUpvote: boolean = true,
@@ -176,13 +219,21 @@ export class PostResolver {
 
       // Update the votes with the userId
       if (isUpvote) {
+        if (!postItem.votes) {
+          postItem.votes = [];
+        }
+
+        const hasVoted = !!postItem.votes.find((curUser) => {
+          return curUser.id === userId;
+        });
+
+        if (hasVoted) {
+          return true;
+        }
+
         const userObj = await User.findOne(userId);
         if (!userObj) {
           return false;
-        }
-
-        if (!postItem.votes) {
-          postItem.votes = [];
         }
 
         postItem.votes.push(userObj);
