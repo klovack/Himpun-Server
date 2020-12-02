@@ -54,7 +54,7 @@ export class PostResolver {
 
     return {
       // return only until the `realLimit`
-      posts: allPosts.slice(0, realLimit + 1),
+      posts: allPosts.slice(0, realLimit),
 
       // If the length of all the posts found is more than the limit,
       // that means the database has still more post.
