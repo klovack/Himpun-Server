@@ -146,4 +146,67 @@ export class PostResolver {
         return false;
       } 
   }
+
+  @Mutation(() => Boolean)
+  async vote(
+    @Arg('postId', () => String) postId: string,
+    @Arg('isUpvote', () => Boolean, {defaultValue: true}) isUpvote: boolean = true,
+    @Ctx() ctx: HimpunContext,
+  ) {
+    // Check for the valid id
+    if (!isUUID(postId)) {
+      return false;
+    }
+    
+    // Check for the valid userId
+    const { userId } = ctx.req.session!;
+    if (!userId) {
+      return false;
+    }
+
+    try {
+      // Fetch the postItem based off of the postId and
+      // return false if no post is associated with that id
+      const postItem = await Post.findOne(postId, {relations: ["votes"]});
+      if (!postItem) {
+        return false;
+      }
+
+      console.log(postItem.votes);
+
+      // Update the votes with the userId
+      if (isUpvote) {
+        const userObj = await User.findOne(userId);
+        if (!userObj) {
+          return false;
+        }
+
+        if (!postItem.votes) {
+          postItem.votes = [];
+        }
+
+        postItem.votes.push(userObj);
+      } else if (!!postItem.votes && postItem.votes.length > 0){
+        let foundUserIdx = -1;
+        postItem.votes.find((curUser, curIdx) => {
+          if (curUser.id === userId) {
+            foundUserIdx = curIdx;
+            return true;
+          }
+
+          return false;
+        });
+
+        if (foundUserIdx >= 0) {
+          postItem.votes.splice(foundUserIdx, 1);
+        }
+      }
+      await postItem.save();
+  
+      return true;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  }
 }
