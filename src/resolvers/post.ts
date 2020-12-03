@@ -169,14 +169,15 @@ export class PostResolver {
     if (!postItem) {
       return false;
     }
-
+    
     // check if the reads is null, and create new one if it is.
-    if (!!postItem.reads || postItem.reads < 0) {
+    if (!postItem.reads || postItem.reads < 0) {
       postItem.reads = 0;
     }
-    // add +1 to the reads.
-    postItem.reads++;
 
+    // add +1 to the reads.
+    postItem.reads += 1;
+    
     // save
     await postItem.save();
 
