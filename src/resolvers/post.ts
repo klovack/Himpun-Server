@@ -190,6 +190,9 @@ export class PostResolver {
    * @param postId 
    * @param isUpvote 
    * @param ctx 
+   * 
+   * @returns `false` if the post or user doesn't exist or the user has canceled his vote.
+   *  `true` if the user has successfully voted or is in the vote
    */
   @Mutation(() => Boolean)
   async vote(
@@ -215,8 +218,6 @@ export class PostResolver {
       if (!postItem) {
         return false;
       }
-
-      console.log(postItem.votes);
 
       // Update the votes with the userId
       if (isUpvote) {
@@ -251,6 +252,8 @@ export class PostResolver {
 
         if (foundUserIdx >= 0) {
           postItem.votes.splice(foundUserIdx, 1);
+          await postItem.save();
+          return false;
         }
       }
       await postItem.save();
