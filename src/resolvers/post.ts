@@ -26,6 +26,27 @@ export class PostResolver {
   ) {
     return root.body?.slice(0, 100);
   }
+
+  @FieldResolver(() => Int)
+  votesCount(
+    @Root() root: Post
+  ) {
+    return root.votes.length;
+  }
+
+  @FieldResolver(() => Int)
+  likesCount(
+    @Root() root: Post
+  ) {
+    return root.likes.length;
+  }
+
+  @FieldResolver(() => Int)
+  dislikesCount(
+    @Root() root: Post
+  ) {
+    return root.dislikes.length;
+  }
   
   @Query(() => PostPaginationResponse)
   async posts(
