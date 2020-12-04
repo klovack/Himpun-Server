@@ -184,7 +184,6 @@ export class PostResolver {
   @Mutation(() => PostUpdateResponse)
   async readPost(
     @Arg('postId', () => String) postId: string,
-    @Ctx() ctx: HimpunContext,
   ): Promise<PostUpdateResponse> {
     // Check for the valid id
     if (!isUUID(postId)) {
