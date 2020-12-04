@@ -2,12 +2,13 @@ import { isUUID, validate } from "class-validator";
 import { Arg, Ctx, Field, FieldResolver, Int, Mutation, ObjectType, Query, Resolver, Root, UseMiddleware } from "type-graphql";
 
 import { PostFilterInput, PostInput } from "../input-types/post";
-import { Post } from "../entities/Post";
+import { Post, PostUpdateType } from "../entities/Post";
 import { Media } from "../entities/Media";
 import { HimpunContext } from "../types";
 import { isAuth } from "../middlewares/isAuth";
 import { User } from "../entities/User";
 import { LessThan } from "typeorm";
+import { FieldError } from "./errors";
 
 @ObjectType()
 class PostPaginationResponse {
@@ -16,6 +17,18 @@ class PostPaginationResponse {
 
   @Field(() => Boolean)
   hasMore: boolean;
+}
+
+@ObjectType()
+class PostUpdateResponse {
+  @Field(() => PostUpdateType)
+  updateType: PostUpdateType;
+
+  @Field(() => Boolean, { nullable: true })
+  result?: boolean;
+
+  @Field(() => [FieldError], {nullable: true})
+  errors?: FieldError[];
 }
 
 @Resolver(Post)
@@ -215,21 +228,37 @@ export class PostResolver {
    * @returns `false` if the post or user doesn't exist or the user has canceled his vote.
    *  `true` if the user has successfully voted or is in the vote
    */
-  @Mutation(() => Boolean)
-  async vote(
+  @Mutation(() => PostUpdateResponse)
+  async votePost(
     @Arg('postId', () => String) postId: string,
     @Arg('isUpvote', () => Boolean, {defaultValue: true}) isUpvote: boolean = true,
     @Ctx() ctx: HimpunContext,
-  ) {
+  ): Promise<PostUpdateResponse> {
     // Check for the valid id
     if (!isUUID(postId)) {
-      return false;
+      return {
+        updateType: PostUpdateType.VOTE,
+        errors: [
+          {
+            field: "postId",
+            message: "Post ID is not valid uuid"
+          }
+        ]
+      };
     }
     
     // Check for the valid userId
     const { userId } = ctx.req.session!;
     if (!userId) {
-      return false;
+      return {
+        updateType: PostUpdateType.VOTE,
+        errors: [
+          {
+            field: "userId",
+            message: "User is not logged in"
+          }
+        ]
+      };
     }
 
     try {
@@ -237,7 +266,15 @@ export class PostResolver {
       // return false if no post is associated with that id
       const postItem = await Post.findOne(postId, {relations: ["votes"]});
       if (!postItem) {
-        return false;
+        return {
+          updateType: PostUpdateType.VOTE,
+          errors: [
+            {
+              field: "post",
+              message: "Post item is not found in the database"
+            }
+          ]
+        };
       }
 
       // Update the votes with the userId
@@ -251,12 +288,23 @@ export class PostResolver {
         });
 
         if (hasVoted) {
-          return true;
+          return {
+            result: true,
+            updateType: PostUpdateType.VOTE,
+          };
         }
 
         const userObj = await User.findOne(userId);
         if (!userObj) {
-          return false;
+          return {
+            updateType: PostUpdateType.VOTE,
+            errors: [
+              {
+                field: "user",
+                message: "User is not found in the database"
+              }
+            ]
+          };
         }
 
         postItem.votes.push(userObj);
@@ -274,15 +322,31 @@ export class PostResolver {
         if (foundUserIdx >= 0) {
           postItem.votes.splice(foundUserIdx, 1);
           await postItem.save();
-          return false;
+          return {
+            result: false,
+            updateType: PostUpdateType.VOTE,
+          };
         }
       }
       await postItem.save();
   
-      return true;
+      return {
+        result: true,
+        updateType: PostUpdateType.VOTE,
+      };
+
     } catch (error) {
       console.log(error);
-      return false;
+      
+      return {
+        updateType: PostUpdateType.VOTE,
+        errors: [
+          {
+            field: "exception",
+            message: error
+          }
+        ]
+      };
     }
   }
 }

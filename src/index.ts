@@ -15,7 +15,7 @@ import { UserResolver } from "./resolvers/user";
 import { HimpunContext } from "./types";
 import { Config } from "./config/config";
 import { User } from "./entities/User";
-import { Post } from "./entities/Post";
+import { Post, PostUpdateType, registerUpdateTypeEnum } from "./entities/Post";
 import { Media, MediaType, registerMediaTypeEnum } from './entities/Media';
 
 const main = async () => {
@@ -24,7 +24,8 @@ const main = async () => {
   const redis = new Redis();
 
   // Registering all enum types
-  registerEnumType(MediaType, registerMediaTypeEnum);
+  registerEnumType(MediaType, registerMediaTypeEnum); 
+  registerEnumType(PostUpdateType, registerUpdateTypeEnum); 
 
   const typeOrmConnectionOption = await getConnectionOptions();
   Object.assign(typeOrmConnectionOption, {

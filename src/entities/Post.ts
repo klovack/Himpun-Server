@@ -3,6 +3,19 @@ import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, Ma
 import { Media } from "./Media";
 import { User } from "./User";
 
+export enum PostUpdateType {
+  VOTE = 'vote',
+  LIKE = 'like',
+  DISLIKE = 'dislike',
+  READ = 'read',
+  CONTENT = 'content'
+}
+
+export const registerUpdateTypeEnum = {
+  name: 'PostUpdateType',
+  description: 'Update types for post'
+}
+
 @ObjectType()
 @Entity()
 export class Post extends BaseEntity {
