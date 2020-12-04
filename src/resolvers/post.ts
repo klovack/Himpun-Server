@@ -181,27 +181,37 @@ export class PostResolver {
       } 
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => PostUpdateResponse)
   async readPost(
     @Arg('postId', () => String) postId: string,
     @Ctx() ctx: HimpunContext,
-  ) {
+  ): Promise<PostUpdateResponse> {
     // Check for the valid id
     if (!isUUID(postId)) {
-      return false;
-    }
-    
-    // Check for the valid userId
-    const { userId } = ctx.req.session!;
-    if (!userId) {
-      return false;
+      return {
+        updateType: PostUpdateType.READ,
+        errors: [
+          {
+            field: "postId",
+            message: "Post ID is not valid uuid"
+          }
+        ]
+      };
     }
 
     // Fetch the postItem based off of the postId and
     // return false if no post is associated with that id
     const postItem = await Post.findOne(postId);
     if (!postItem) {
-      return false;
+      return {
+        updateType: PostUpdateType.READ,
+        errors: [
+          {
+            field: "post",
+            message: "Post item is not found in the database"
+          }
+        ]
+      };
     }
     
     // check if the reads is null, and create new one if it is.
@@ -215,7 +225,10 @@ export class PostResolver {
     // save
     await postItem.save();
 
-    return true;
+    return {
+      result: true,
+      updateType: PostUpdateType.READ
+    };
   }
 
   /**
